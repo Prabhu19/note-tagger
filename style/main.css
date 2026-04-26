@@ -1,0 +1,195 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.note-taker {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.app-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #111;
+}
+
+/* ── Input area ─────────────────────────────────────────── */
+
+.input-section {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.note-input {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: .6rem .8rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.note-input:focus {
+  border-color: #4f7fe8;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: .75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  font-size: .875rem;
+  font-family: inherit;
+  padding: .45rem .9rem;
+  transition: opacity .15s, background .15s;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.classify-button {
+  background: #4f7fe8;
+  color: #fff;
+}
+
+.classify-button:hover:not(:disabled) {
+  background: #3a6bd4;
+}
+
+.save-button {
+  background: #1a1a1a;
+  color: #fff;
+  margin-left: auto;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #333;
+}
+
+/* ── Tag badges ──────────────────────────────────────────── */
+
+.tag-badge {
+  display: inline-block;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.tag-work     { background: #4f7fe8; }
+.tag-todo     { background: #e87c4f; }
+.tag-idea     { background: #9b59b6; }
+.tag-personal { background: #27ae60; }
+
+/* ── Filter row ──────────────────────────────────────────── */
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: .875rem;
+  color: #666;
+}
+
+.filter-btn {
+  background: #e8e8e8;
+  color: #444;
+  padding: .3rem .7rem;
+  font-size: .8rem;
+}
+
+.filter-btn:hover {
+  background: #d5d5d5;
+}
+
+.filter-btn--active {
+  color: #fff;
+}
+
+.filter-btn--active.tag-work     { background: #4f7fe8; }
+.filter-btn--active.tag-todo     { background: #e87c4f; }
+.filter-btn--active.tag-idea     { background: #9b59b6; }
+.filter-btn--active.tag-personal { background: #27ae60; }
+
+.filter-btn--all {
+  background: #ddd;
+}
+
+/* ── Notes list ──────────────────────────────────────────── */
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.note-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: .85rem 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  border-left: 4px solid #ccc;
+}
+
+.note-card--work     { border-left-color: #4f7fe8; }
+.note-card--todo     { border-left-color: #e87c4f; }
+.note-card--idea     { border-left-color: #9b59b6; }
+.note-card--personal { border-left-color: #27ae60; }
+
+.note-card .tag-badge {
+  margin-bottom: .4rem;
+}
+
+.note-text {
+  font-size: .95rem;
+  line-height: 1.5;
+  color: #222;
+  white-space: pre-wrap;
+  margin-top: .35rem;
+}
+
+.empty-state,
+.loading {
+  text-align: center;
+  color: #888;
+  padding: 2rem 0;
+  font-size: .95rem;
+}
