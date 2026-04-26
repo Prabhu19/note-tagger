@@ -1,7 +1,6 @@
 use futures::stream::StreamExt;
 use leptos::prelude::*;
 
-use crate::types::NoteTag;
 use crate::webworker::bert_classifier_worker;
 use crate::ml::util::{load_notes, save_note};
 
