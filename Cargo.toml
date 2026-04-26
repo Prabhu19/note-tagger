@@ -1,0 +1,67 @@
+[package]
+name = "note-tagger"
+version = "0.1.0"
+edition = "2024"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+worker          = { version = "0.8", features = ["http", "axum"], optional = true }
+tokio           = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
+axum            = { version = "0.8", default-features = false, optional = true }
+leptos          = { version = "0.8", features = ["cbor"] }
+leptos_axum     = { version = "0.8", default-features = false, optional = true }
+leptos_meta     = { version = "0.8" }
+leptos_router   = { version = "0.8" }
+tower-service   = "0.3"
+wasm-bindgen         = "0.2.118"
+wasm-bindgen-futures = "0.4"
+js-sys          = "0.3"
+web-sys         = { version = "0.3", features = ["Window", "Navigator", "console"] }
+leptos_workers  = "0.3"
+candle-core         = "0.10"
+candle-nn           = "0.10"
+candle-transformers = "0.10"
+tokenizers      = { version = "0.22", default-features = false, features = ["unstable_wasm"] }
+safetensors     = "0.7"
+serde           = { version = "1.0", features = ["derive"] }
+serde_json      = "1.0"
+serde-wasm-bindgen = "0.6"
+serde_cbor      = "0.11.2"
+getrandom       = { version = "0.4", features = ["wasm_js"] }
+anyhow          = "1.0"
+send_wrapper    = "0.6"
+futures         = "0.3"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+hydrate      = ["leptos/hydrate"]
+ssr          = ["dep:axum", "dep:leptos_axum", "leptos/ssr", "leptos_router/ssr"]
+cloudflare   = ["dep:worker", "leptos_axum/wasm"]
+nocloudflare = ["dep:tokio", "axum/macros", "axum/tokio", "axum/http2", "axum/default", "leptos_axum/default"]
+
+[package.metadata.leptos]
+output-name          = "note-tagger"
+site-root            = "target/site"
+site-pkg-dir         = "pkg"
+style-file           = "style/main.css"
+assets-dir           = "assets"
+site-addr            = "0.0.0.0:8787"
+reload-port          = 3001
+bin-features         = ["ssr", "nocloudflare"]
+bin-default-features = false
+lib-features         = ["hydrate"]
+lib-default-features = false
+wasm-opt-features    = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-simd"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["--enable-simd"]

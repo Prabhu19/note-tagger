@@ -1,0 +1,16 @@
+name = "note-tagger"
+main = "build/index.js"
+compatibility_date = "2025-11-19"
+
+[observability]
+enabled = true
+
+[build]
+command = "cargo leptos build --release --bin-features 'ssr cloudflare'"
+
+[assets]
+directory = "./target/site"
+
+[[r2_buckets]]
+binding     = "note-tagger-bucket"
+bucket_name = "note-tagger-stg"

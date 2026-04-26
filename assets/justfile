@@ -1,0 +1,17 @@
+default:
+  just -u -l
+
+bucket := "note-tagger-stg"
+
+# Download bert-tiny weights from Hugging Face
+download-weights:
+  mkdir -p models/bert-tiny
+  wget -c https://huggingface.co/prajjwal1/bert-tiny/resolve/main/model.safetensors \
+    -P models/bert-tiny
+  wget -c https://huggingface.co/prajjwal1/bert-tiny/raw/main/tokenizer.json \
+    -P models/bert-tiny
+  wget -c https://huggingface.co/prajjwal1/bert-tiny/raw/main/config.json \
+    -P models/bert-tiny
+
+create-bucket bucket=bucket:
+  npx wrangler r2 bucket create {{ bucket }}
