@@ -1,7 +1,7 @@
 use futures::stream::StreamExt;
 use leptos::prelude::*;
 
-use crate::types::WorkerInput;
+use crate::types::{Note, WorkerInput};
 use crate::webworker::bert_classifier_worker;
 use crate::ml::util::{delete_note, load_categories, load_notes, save_category, save_note};
 
@@ -88,11 +88,25 @@ pub fn NoteTakerComponent() -> impl IntoView {
         }
     });
 
-    let displayed_notes = move || {
-        if let Some(Ok(notes)) = delete_action.value().get() { return notes; }
-        if let Some(Ok(notes)) = save_action.value().get()   { return notes; }
-        notes_resource.get().and_then(|r| r.ok()).unwrap_or_default()
-    };
+    // Single source of truth for the displayed notes list.
+    // Effects drive it from the resource (initial load) and action results (mutations).
+    let notes_list = RwSignal::new(Vec::<Note>::new());
+
+    Effect::new(move || {
+        if let Some(Ok(notes)) = notes_resource.get() {
+            notes_list.set(notes);
+        }
+    });
+    Effect::new(move || {
+        if let Some(Ok(notes)) = save_action.value().get() {
+            notes_list.set(notes);
+        }
+    });
+    Effect::new(move || {
+        if let Some(Ok(notes)) = delete_action.value().get() {
+            notes_list.set(notes);
+        }
+    });
 
     // All tags: builtins + any saved custom tags
     let all_tags = move || {
@@ -114,7 +128,7 @@ pub fn NoteTakerComponent() -> impl IntoView {
 
     let filtered_notes = move || {
         let f = filter_tag.get();
-        displayed_notes()
+        notes_list.get()
             .into_iter()
             .filter(|n| f.as_deref().map_or(true, |t| n.tag.as_str() == t))
             .collect::<Vec<_>>()
