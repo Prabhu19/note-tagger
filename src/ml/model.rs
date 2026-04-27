@@ -7,28 +7,25 @@ use tokenizers::Tokenizer;
 pub const DEVICE: Device = Device::Cpu;
 pub const DTYPE: DType = DType::F32;
 
-static MODEL_BYTES: &[u8] =
-    include_bytes!("../../assets/models/bert-tiny/model.safetensors");
-static TOKENIZER_BYTES: &[u8] =
-    include_bytes!("../../assets/models/bert-tiny/tokenizer.json");
-static CONFIG_BYTES: &[u8] =
-    include_bytes!("../../assets/models/bert-tiny/config.json");
-
 pub struct BertEncoder {
     model: BertModel,
     tokenizer: Tokenizer,
 }
 
 impl BertEncoder {
-    pub fn load() -> Result<Self> {
-        let config: BertConfig = serde_json::from_slice(CONFIG_BYTES)?;
-        let tokenizer = Tokenizer::from_bytes(TOKENIZER_BYTES)
+    pub async fn load() -> Result<Self> {
+        let model_bytes =
+            fetch_bytes("/models/bert-tiny/model.safetensors").await?;
+        let tokenizer_bytes =
+            fetch_bytes("/models/bert-tiny/tokenizer.json").await?;
+        let config_bytes =
+            fetch_bytes("/models/bert-tiny/config.json").await?;
+
+        let config: BertConfig = serde_json::from_slice(&config_bytes)?;
+        let tokenizer = Tokenizer::from_bytes(&tokenizer_bytes)
             .map_err(|e| anyhow::anyhow!("tokenizer error: {e}"))?;
-        let vb = VarBuilder::from_buffered_safetensors(
-            MODEL_BYTES.to_vec(),
-            DTYPE,
-            &DEVICE,
-        )?;
+        let vb =
+            VarBuilder::from_buffered_safetensors(model_bytes, DTYPE, &DEVICE)?;
         let model = BertModel::load(vb.pp("bert"), &config)?;
         Ok(Self { model, tokenizer })
     }
@@ -50,4 +47,35 @@ impl BertEncoder {
         let cls = output.i((0, 0))?;
         Ok(cls.to_vec1::<f32>()?)
     }
+}
+
+// In WASM (browser Web Worker or Cloudflare Worker) fetch via the global fetch API.
+// Relative URLs don't resolve from blob-URL workers, so prepend the origin.
+#[cfg(target_arch = "wasm32")]
+async fn fetch_bytes(url: &str) -> Result<Vec<u8>> {
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen_futures::JsFuture;
+
+    let scope: web_sys::WorkerGlobalScope = js_sys::global().unchecked_into();
+    let origin = scope.location().origin();
+    let absolute_url = format!("{origin}{url}");
+    let resp: web_sys::Response =
+        JsFuture::from(scope.fetch_with_str(&absolute_url))
+            .await
+            .map_err(|e| anyhow::anyhow!("fetch {absolute_url}: {e:?}"))?
+            .unchecked_into();
+    let buf = JsFuture::from(
+        resp.array_buffer()
+            .map_err(|e| anyhow::anyhow!("array_buffer: {e:?}"))?,
+    )
+    .await
+    .map_err(|e| anyhow::anyhow!("buffer await: {e:?}"))?;
+    Ok(js_sys::Uint8Array::new(&buf).to_vec())
+}
+
+// On native (dev-native / cargo test), read from the assets directory.
+#[cfg(not(target_arch = "wasm32"))]
+async fn fetch_bytes(url: &str) -> Result<Vec<u8>> {
+    let path = format!("assets{url}");
+    std::fs::read(&path).map_err(|e| anyhow::anyhow!("read {path}: {e}"))
 }

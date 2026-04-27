@@ -12,6 +12,7 @@ pub fn register_server_functions() {
     use leptos::server_fn::axum::register_explicit;
     register_explicit::<ml::util::SaveNote>();
     register_explicit::<ml::util::LoadNotes>();
+    register_explicit::<ml::util::DeleteNote>();
 }
 
 #[cfg(all(feature = "ssr", feature = "cloudflare"))]
@@ -22,8 +23,11 @@ async fn router(env: Env) -> axum::Router {
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use std::sync::Arc;
 
-    let conf = get_configuration(None).unwrap();
-    let leptos_options = conf.leptos_options;
+    // get_configuration() reads env vars at runtime, which aren't set in a WASM Worker.
+    // Hardcode the values that cargo-leptos would normally provide.
+    let leptos_options = LeptosOptions::builder()
+        .output_name("note-tagger")
+        .build();
     let routes = generate_route_list(App);
     register_server_functions();
 

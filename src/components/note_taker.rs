@@ -2,7 +2,7 @@ use futures::stream::StreamExt;
 use leptos::prelude::*;
 
 use crate::webworker::bert_classifier_worker;
-use crate::ml::util::{load_notes, save_note};
+use crate::ml::util::{delete_note, load_notes, save_note};
 
 #[component]
 pub fn NoteTakerComponent() -> impl IntoView {
@@ -38,13 +38,20 @@ pub fn NoteTakerComponent() -> impl IntoView {
     // SSR-compatible resource — initial notes arrive in HTML (no spinner)
     let notes_resource = Resource::new(|| (), |_| load_notes());
 
-    // Mutation action — returns updated notes list on success
     let save_action = Action::new(move |(text, tag): &(String, String)| {
         let (text, tag) = (text.clone(), tag.clone());
         async move { save_note(text, tag).await }
     });
 
+    let delete_action = Action::new(move |id: &u64| {
+        let id = *id;
+        async move { delete_note(id).await }
+    });
+
     let displayed_notes = move || {
+        if let Some(Ok(notes)) = delete_action.value().get() {
+            return notes;
+        }
         if let Some(Ok(notes)) = save_action.value().get() {
             return notes;
         }
@@ -169,11 +176,21 @@ pub fn NoteTakerComponent() -> impl IntoView {
                             }.into_any()
                         } else {
                             notes.into_iter().map(|note| {
+                                let note_id = note.id;
                                 view! {
                                     <div class=format!("note-card note-card--{}", note.tag.as_str())>
-                                        <span class=format!("tag-badge tag-{}", note.tag.as_str())>
-                                            {note.tag.as_str()}
-                                        </span>
+                                        <div class="note-card-header">
+                                            <span class=format!("tag-badge tag-{}", note.tag.as_str())>
+                                                {note.tag.as_str()}
+                                            </span>
+                                            <button
+                                                class="delete-btn"
+                                                on:click=move |_| { delete_action.dispatch(note_id); }
+                                                disabled=move || delete_action.pending().get()
+                                            >
+                                                "✕"
+                                            </button>
+                                        </div>
                                         <p class="note-text">{note.text}</p>
                                     </div>
                                 }

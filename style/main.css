@@ -174,8 +174,25 @@ button:disabled {
 .note-card--idea     { border-left-color: #9b59b6; }
 .note-card--personal { border-left-color: #27ae60; }
 
-.note-card .tag-badge {
+.note-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: .4rem;
+}
+
+.delete-btn {
+  background: transparent;
+  color: #aaa;
+  padding: .1rem .4rem;
+  font-size: .8rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .note-text {

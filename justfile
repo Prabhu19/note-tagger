@@ -2,12 +2,12 @@ set unstable
 
 setup:
   rustup target add wasm32-unknown-unknown
-  cargo install cargo-leptos wasm-bindgen-cli
+  cargo install cargo-leptos wasm-bindgen-cli worker-build
   cargo update
   just r2 download-weights
 
 dev:
-  npx wrangler dev --ip 0.0.0.0 --port 8787
+  npx wrangler dev --ip 0.0.0.0 --port 8788
 
 dev-native:
   cargo leptos watch

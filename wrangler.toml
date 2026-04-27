@@ -6,7 +6,7 @@ compatibility_date = "2025-11-19"
 enabled = true
 
 [build]
-command = "cargo leptos build --release --bin-features 'ssr cloudflare'"
+command = "cargo leptos build --release --bin-features 'ssr cloudflare' && worker-build --release -- --features ssr,cloudflare && cp target/site/pkg/note-tagger.wasm target/site/pkg/note-tagger_bg.wasm"
 
 [assets]
 directory = "./target/site"

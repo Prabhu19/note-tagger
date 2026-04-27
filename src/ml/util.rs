@@ -1,4 +1,6 @@
-use crate::types::{Note, NoteTag};
+use crate::types::Note;
+#[cfg(feature = "ssr")]
+use crate::types::NoteTag;
 use leptos::prelude::*;
 use leptos::server_fn::codec::Cbor;
 
@@ -57,6 +59,48 @@ pub async fn save_note(text: String, tag: String) -> Result<Vec<Note>, ServerFnE
             vec![]
         };
         notes.push(new_note);
+        std::fs::write(
+            path,
+            serde_cbor::to_vec(&notes).map_err(|e| ServerFnError::new(e.to_string()))?,
+        )?;
+        return Ok(notes);
+    }
+
+    #[allow(unreachable_code)]
+    Err(ServerFnError::new("No storage backend"))
+}
+
+#[server(DeleteNote, endpoint = "delete_note", output = Cbor)]
+pub async fn delete_note(id: u64) -> Result<Vec<Note>, ServerFnError> {
+    #[cfg(all(feature = "ssr", feature = "cloudflare", not(feature = "nocloudflare")))]
+    {
+        use axum::Extension;
+        use std::sync::Arc;
+        use worker::Env;
+        let Extension::<Arc<Env>>(env) = leptos_axum::extract().await?;
+        let bucket = env
+            .bucket(BUCKET_BINDING)
+            .map_err(|e| ServerFnError::new(e.to_string()))?;
+        let r2 = SendWrapper::new(bucket);
+        let mut notes = read_notes_from_r2(&r2).await?;
+        notes.retain(|n| n.id != id);
+        let cbor =
+            serde_cbor::to_vec(&notes).map_err(|e| ServerFnError::new(e.to_string()))?;
+        SendWrapper::new(r2.put(NOTES_KEY, cbor).execute())
+            .await
+            .map_err(|e| ServerFnError::new(e.to_string()))?;
+        return Ok(notes);
+    }
+
+    #[cfg(all(feature = "ssr", feature = "nocloudflare", not(feature = "cloudflare")))]
+    {
+        let path = std::path::Path::new("/tmp/notes.cbor");
+        let mut notes: Vec<Note> = if path.exists() {
+            serde_cbor::from_slice(&std::fs::read(path)?).unwrap_or_default()
+        } else {
+            vec![]
+        };
+        notes.retain(|n| n.id != id);
         std::fs::write(
             path,
             serde_cbor::to_vec(&notes).map_err(|e| ServerFnError::new(e.to_string()))?,

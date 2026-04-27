@@ -8,7 +8,7 @@ pub async fn bert_classifier_worker(
     rx: leptos_workers::Receiver<String>,
     tx: leptos_workers::Sender<String>,
 ) {
-    let encoder = match BertEncoder::load() {
+    let encoder = match BertEncoder::load().await {
         Ok(e) => e,
         Err(err) => {
             leptos::logging::error!("BertClassifierWorker: load failed: {err:?}");

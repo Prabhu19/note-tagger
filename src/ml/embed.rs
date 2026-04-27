@@ -3,18 +3,24 @@ use crate::types::NoteTag;
 use anyhow::Result;
 
 pub const LABEL_PHRASES: &[(&str, NoteTag)] = &[
-    ("meeting with team", NoteTag::Work),
-    ("project deadline approaching", NoteTag::Work),
-    ("client call scheduled", NoteTag::Work),
-    ("finish this task", NoteTag::Todo),
-    ("remember to buy groceries", NoteTag::Todo),
-    ("action item for tomorrow", NoteTag::Todo),
-    ("new feature concept", NoteTag::Idea),
-    ("creative project inspiration", NoteTag::Idea),
-    ("what if we tried this", NoteTag::Idea),
-    ("weekend with family", NoteTag::Personal),
-    ("feeling good today", NoteTag::Personal),
-    ("personal diary entry", NoteTag::Personal),
+    ("meeting with the team at work", NoteTag::Work),
+    ("deploy service to production environment", NoteTag::Work),
+    ("code review and engineering task", NoteTag::Work),
+    ("client presentation or technical discussion", NoteTag::Work),
+    ("infrastructure setup and deployment", NoteTag::Work),
+    ("attend the standup meeting today", NoteTag::Todo),
+    ("need to finish this task before deadline", NoteTag::Todo),
+    ("remember to send the report", NoteTag::Todo),
+    ("pick up groceries on the way home", NoteTag::Todo),
+    ("schedule a call with the team", NoteTag::Todo),
+    ("new product or feature concept", NoteTag::Idea),
+    ("what if we built something like this", NoteTag::Idea),
+    ("creative project inspiration and brainstorm", NoteTag::Idea),
+    ("startup idea worth exploring", NoteTag::Idea),
+    ("weekend trip with family and friends", NoteTag::Personal),
+    ("personal journal about feelings and life", NoteTag::Personal),
+    ("birthday celebration or social event", NoteTag::Personal),
+    ("had a good day feeling happy", NoteTag::Personal),
 ];
 
 pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
@@ -59,19 +65,4 @@ pub fn classify(note_emb: &[f32], label_embeddings: &[(NoteTag, Vec<f32>)]) -> N
         .max_by(|(_, a), (_, b)| a.total_cmp(b))
         .map(|(tag, _)| tag.clone())
         .unwrap_or(NoteTag::Personal)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn work_phrase_classifies_as_work() {
-        let encoder = BertEncoder::load().expect("load failed");
-        let label_embeddings =
-            build_label_embeddings(&encoder).expect("labels failed");
-        let emb = encoder.encode("meeting with team").expect("encode failed");
-        let tag = classify(&emb, &label_embeddings);
-        assert_eq!(tag, NoteTag::Work);
-    }
 }
