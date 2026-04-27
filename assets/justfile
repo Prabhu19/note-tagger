@@ -6,13 +6,14 @@ bucket := "note-tagger-stg"
 # Download bert-tiny weights from Hugging Face and convert to F16 (~16 MB, fits Cloudflare's 25 MB asset limit)
 download-weights:
   mkdir -p models/bert-tiny
-  wget -c https://huggingface.co/prajjwal1/bert-tiny/resolve/main/model.safetensors \
+  pip3 install -q safetensors torch
+  wget -c https://huggingface.co/prajjwal1/bert-tiny/resolve/main/pytorch_model.bin \
     -P models/bert-tiny
-  wget -c https://huggingface.co/prajjwal1/bert-tiny/raw/main/tokenizer.json \
+  wget -c https://huggingface.co/google-bert/bert-base-uncased/resolve/main/tokenizer.json \
     -P models/bert-tiny
-  wget -c https://huggingface.co/prajjwal1/bert-tiny/raw/main/config.json \
+  wget -c https://huggingface.co/prajjwal1/bert-tiny/resolve/main/config.json \
     -P models/bert-tiny
-  python3 assets/convert_f16.py models/bert-tiny/model.safetensors
+
 
 create-bucket bucket=bucket:
   npx wrangler r2 bucket create {{ bucket }}

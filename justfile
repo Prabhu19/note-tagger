@@ -1,5 +1,8 @@
 set unstable
 
+default:
+  just --list
+
 setup:
   rustup target add wasm32-unknown-unknown
   cargo install cargo-leptos wasm-bindgen-cli worker-build
