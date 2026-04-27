@@ -1,53 +1,57 @@
+use std::collections::HashMap;
 use super::model::BertEncoder;
-use crate::types::NoteTag;
 use anyhow::Result;
 
-pub const LABEL_PHRASES: &[(&str, NoteTag)] = &[
-    ("meeting with the team at work", NoteTag::Work),
-    ("deploy service to production environment", NoteTag::Work),
-    ("code review and engineering task", NoteTag::Work),
-    ("client presentation or technical discussion", NoteTag::Work),
-    ("infrastructure setup and deployment", NoteTag::Work),
-    ("attend the standup meeting today", NoteTag::Todo),
-    ("need to finish this task before deadline", NoteTag::Todo),
-    ("remember to send the report", NoteTag::Todo),
-    ("pick up groceries on the way home", NoteTag::Todo),
-    ("schedule a call with the team", NoteTag::Todo),
-    ("new product or feature concept", NoteTag::Idea),
-    ("what if we built something like this", NoteTag::Idea),
-    ("creative project inspiration and brainstorm", NoteTag::Idea),
-    ("startup idea worth exploring", NoteTag::Idea),
-    ("weekend trip with family and friends", NoteTag::Personal),
-    ("personal journal about feelings and life", NoteTag::Personal),
-    ("birthday celebration or social event", NoteTag::Personal),
-    ("had a good day feeling happy", NoteTag::Personal),
+/// Built-in category phrases: (phrase, category_name).
+pub const BUILTIN_PHRASES: &[(&str, &str)] = &[
+    ("meeting with the team at work",              "work"),
+    ("deploy service to production environment",   "work"),
+    ("code review and engineering task",           "work"),
+    ("client presentation or technical discussion","work"),
+    ("infrastructure setup and deployment",        "work"),
+    ("attend the standup meeting today",           "todo"),
+    ("need to finish this task before deadline",   "todo"),
+    ("remember to send the report",                "todo"),
+    ("pick up groceries on the way home",          "todo"),
+    ("schedule a call with the team",              "todo"),
+    ("new product or feature concept",             "idea"),
+    ("what if we built something like this",       "idea"),
+    ("creative project inspiration and brainstorm","idea"),
+    ("startup idea worth exploring",               "idea"),
+    ("weekend trip with family and friends",       "personal"),
+    ("personal journal about feelings and life",   "personal"),
+    ("birthday celebration or social event",       "personal"),
+    ("had a good day feeling happy",               "personal"),
 ];
 
 pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let norm_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if norm_a == 0.0 || norm_b == 0.0 {
-        0.0
-    } else {
-        dot / (norm_a * norm_b)
-    }
+    if norm_a == 0.0 || norm_b == 0.0 { 0.0 } else { dot / (norm_a * norm_b) }
 }
 
-/// Encodes all label phrases and averages embeddings per category.
-pub fn build_label_embeddings(encoder: &BertEncoder) -> Result<Vec<(NoteTag, Vec<f32>)>> {
-    let mut buckets: std::collections::HashMap<&str, Vec<Vec<f32>>> =
-        Default::default();
-    for (phrase, tag) in LABEL_PHRASES {
-        buckets
-            .entry(tag.as_str())
-            .or_default()
-            .push(encoder.encode(phrase)?);
+/// Builds per-category centroid embeddings from built-in phrases plus any
+/// user-defined extra categories (name → list of example phrases).
+pub fn build_label_embeddings(
+    encoder: &BertEncoder,
+    extra: &[(String, Vec<String>)],
+) -> Result<Vec<(String, Vec<f32>)>> {
+    let mut buckets: HashMap<String, Vec<Vec<f32>>> = HashMap::new();
+
+    for (phrase, cat) in BUILTIN_PHRASES {
+        buckets.entry(cat.to_string()).or_default().push(encoder.encode(phrase)?);
     }
-    let tags = [NoteTag::Work, NoteTag::Todo, NoteTag::Idea, NoteTag::Personal];
-    tags.into_iter()
-        .map(|tag| {
-            let vecs = &buckets[tag.as_str()];
+
+    for (name, phrases) in extra {
+        for phrase in phrases {
+            buckets.entry(name.clone()).or_default().push(encoder.encode(phrase)?);
+        }
+    }
+
+    buckets
+        .into_iter()
+        .map(|(tag, vecs)| {
             let len = vecs[0].len();
             let mean: Vec<f32> = (0..len)
                 .map(|i| vecs.iter().map(|v| v[i]).sum::<f32>() / vecs.len() as f32)
@@ -57,12 +61,11 @@ pub fn build_label_embeddings(encoder: &BertEncoder) -> Result<Vec<(NoteTag, Vec
         .collect()
 }
 
-/// Classifies a note embedding by highest cosine similarity to label embeddings.
-pub fn classify(note_emb: &[f32], label_embeddings: &[(NoteTag, Vec<f32>)]) -> NoteTag {
+pub fn classify(note_emb: &[f32], label_embeddings: &[(String, Vec<f32>)]) -> String {
     label_embeddings
         .iter()
         .map(|(tag, emb)| (tag, cosine_similarity(note_emb, emb)))
         .max_by(|(_, a), (_, b)| a.total_cmp(b))
         .map(|(tag, _)| tag.clone())
-        .unwrap_or(NoteTag::Personal)
+        .unwrap_or_else(|| "personal".to_string())
 }

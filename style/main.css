@@ -203,6 +203,71 @@ button:disabled {
   margin-top: .35rem;
 }
 
+/* ── Add-tag form ────────────────────────────────────────────── */
+
+.add-tag-toggle {
+  background: transparent;
+  color: #4f7fe8;
+  border: 1px dashed #4f7fe8;
+  padding: .25rem .65rem;
+  font-size: .8rem;
+  margin-left: auto;
+}
+
+.add-tag-toggle:hover {
+  background: #eef2fd;
+}
+
+.add-tag-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.add-tag-hint {
+  font-size: .82rem;
+  color: #666;
+  margin-bottom: .75rem;
+  line-height: 1.45;
+}
+
+.add-tag-fields {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.tag-name-input,
+.phrase-input {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: .45rem .7rem;
+  font-size: .9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.tag-name-input:focus,
+.phrase-input:focus {
+  border-color: #4f7fe8;
+}
+
+.save-tag-btn {
+  align-self: flex-start;
+  background: #4f7fe8;
+  color: #fff;
+  padding: .4rem .9rem;
+}
+
+.save-tag-btn:hover:not(:disabled) {
+  background: #3a6bd4;
+}
+
 .empty-state,
 .loading {
   text-align: center;

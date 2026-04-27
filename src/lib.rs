@@ -13,6 +13,8 @@ pub fn register_server_functions() {
     register_explicit::<ml::util::SaveNote>();
     register_explicit::<ml::util::LoadNotes>();
     register_explicit::<ml::util::DeleteNote>();
+    register_explicit::<ml::util::SaveCategory>();
+    register_explicit::<ml::util::LoadCategories>();
 }
 
 #[cfg(all(feature = "ssr", feature = "cloudflare"))]

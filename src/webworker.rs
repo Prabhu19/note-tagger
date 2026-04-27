@@ -2,10 +2,11 @@ use futures::stream::StreamExt;
 use leptos_workers::worker;
 
 use crate::ml::{embed, model::BertEncoder};
+use crate::types::WorkerInput;
 
 #[worker(BertClassifierWorker)]
 pub async fn bert_classifier_worker(
-    rx: leptos_workers::Receiver<String>,
+    rx: leptos_workers::Receiver<WorkerInput>,
     tx: leptos_workers::Sender<String>,
 ) {
     let encoder = match BertEncoder::load().await {
@@ -16,12 +17,11 @@ pub async fn bert_classifier_worker(
         }
     };
 
-    let label_embeddings = match embed::build_label_embeddings(&encoder) {
+    let mut custom_categories: Vec<(String, Vec<String>)> = vec![];
+    let mut label_embeddings = match embed::build_label_embeddings(&encoder, &custom_categories) {
         Ok(e) => e,
         Err(err) => {
-            leptos::logging::error!(
-                "BertClassifierWorker: label embeddings failed: {err:?}"
-            );
+            leptos::logging::error!("BertClassifierWorker: label embeddings failed: {err:?}");
             return;
         }
     };
@@ -29,16 +29,30 @@ pub async fn bert_classifier_worker(
     leptos::logging::log!("BertClassifierWorker: ready.");
 
     let mut stream = rx.into_stream();
-    while let Some(note_text) = stream.next().await {
-        let tag_str = match encoder.encode(&note_text) {
-            Ok(emb) => embed::classify(&emb, &label_embeddings)
-                .as_str()
-                .to_string(),
-            Err(e) => {
-                leptos::logging::error!("encode error: {e:?}");
-                "personal".to_string()
+    while let Some(msg) = stream.next().await {
+        match msg {
+            WorkerInput::Classify(text) => {
+                let tag = match encoder.encode(&text) {
+                    Ok(emb) => embed::classify(&emb, &label_embeddings),
+                    Err(e) => {
+                        leptos::logging::error!("encode error: {e:?}");
+                        "personal".to_string()
+                    }
+                };
+                let _ = tx.send(tag);
             }
-        };
-        let _ = tx.send(tag_str);
+            WorkerInput::UpdateCategories(cats) => {
+                custom_categories = cats;
+                match embed::build_label_embeddings(&encoder, &custom_categories) {
+                    Ok(e) => {
+                        label_embeddings = e;
+                        leptos::logging::log!("BertClassifierWorker: categories updated.");
+                    }
+                    Err(e) => {
+                        leptos::logging::error!("BertClassifierWorker: rebuild failed: {e:?}");
+                    }
+                }
+            }
+        }
     }
 }
